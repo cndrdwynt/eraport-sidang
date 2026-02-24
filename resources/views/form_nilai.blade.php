@@ -100,7 +100,7 @@
 </nav>
 
 <div class="container">
-    <form action="{{ isset($penilaian) ? '/update/'.$penilaian->id : '/simpan-data' }}" method="POST">
+    <form action="{{ isset($penilaian) ? route('update_nilai', $penilaian->id) : route('simpan_nilai') }}" method="POST">
         @csrf 
         @if(isset($penilaian)) @method('PUT') @endif
 

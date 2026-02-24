@@ -9,15 +9,26 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
-{
-    Schema::create('revisis', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('penilaian_id')->constrained()->onDelete('cascade'); // Terhubung ke mahasiswa
-        $table->text('catatan'); // Isi revisinya apa
-        $table->date('tanggal_bimbingan'); // Kapan bimbingannya
-        $table->enum('status', ['pending', 'selesai'])->default('pending'); // Status per item
-        $table->timestamps();
-    });
-}
+    public function up(): void
+    {
+        // 1. Hancurkan dulu tabel revisis versi lama yang strukturnya beda
+        Schema::dropIfExists('revisis');
+
+        // 2. Buat tabel revisis baru yang sesuai dengan Controller kita
+        Schema::create('revisis', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('mahasiswa_id'); // Dihubungkan ke Mahasiswa
+            $table->text('catatan')->nullable(); // Catatan dosen
+            $table->integer('status')->default(0); // 0 = Proses, 1 = Selesai
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('revisis');
+    }
 };

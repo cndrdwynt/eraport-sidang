@@ -62,12 +62,13 @@
     </div>
     @endif
 
+    {{-- KOTAK STATISTIK --}}
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm text-white" style="background: linear-gradient(45deg, #3a7bd5, #00d2ff); border-radius: 15px;">
                 <div class="card-body d-flex align-items-center p-4">
                     <div class="display-4 me-3"><i class="bi bi-people-fill"></i></div>
-                    <div><h6 class="text-white-50 text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 1px;">Total Mahasiswa</h6><h2 class="fw-bold m-0">{{ $totalSiswa }}</h2></div>
+                    <div><h6 class="text-white-50 text-uppercase mb-1" style="font-size: 0.8rem; letter-spacing: 1px;">Total Dinilai</h6><h2 class="fw-bold m-0">{{ $totalSiswa }}</h2></div>
                 </div>
             </div>
         </div>
@@ -89,12 +90,68 @@
         </div>
     </div>
 
+    {{-- BARU: TABEL MAHASISWA AKTIF (SINKRON DARI PORTAL MAHASISWA) --}}
+    <div class="card card-modern p-4 mb-4">
+        <div class="row align-items-center mb-3 pb-3 border-bottom">
+            <div class="col-12">
+                <h4 class="fw-bold m-0 text-dark"><i class="bi bi-bell-fill text-warning me-2"></i>Daftar Mahasiswa Menunggu Penilaian</h4>
+                <p class="text-muted small m-0 mt-1">Data mahasiswa yang mendaftar Sempro/Sidang dari portal mahasiswa.</p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-custom align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">NRP</th>
+                        <th>Mahasiswa</th>
+                        <th>Judul Tugas Akhir</th>
+                        <th>Status</th>
+                        <th class="text-center pe-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(isset($mahasiswaAktif) && $mahasiswaAktif->count() > 0)
+                        @foreach($mahasiswaAktif as $mhs)
+                        <tr>
+                            <td class="ps-3 fw-bold text-secondary">{{ $mhs->nrp }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ $mhs->name }}</div>
+                            </td>
+                            <td><span title="{{ $mhs->judul_ta }}">{{ Str::limit($mhs->judul_ta, 40) }}</span></td>
+                            <td>
+                                @php
+                                    $bColor = 'bg-secondary';
+                                    if(str_contains($mhs->status_sidang, 'Bimbingan')) $bColor = 'bg-info';
+                                    elseif(str_contains($mhs->status_sidang, 'Sempro')) $bColor = 'bg-primary';
+                                    elseif(str_contains($mhs->status_sidang, 'Revisi')) $bColor = 'bg-warning text-dark';
+                                @endphp
+                                <span class="badge {{ $bColor }} rounded-pill px-3 py-2">{{ $mhs->status_sidang }}</span>
+                            </td>
+                            <td class="text-center pe-3">
+                                <a href="{{ route('form_nilai.create', ['nrp' => $mhs->nrp, 'nama' => $mhs->name]) }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    <i class="bi bi-pencil-square me-1"></i>Beri Nilai
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">Belum ada mahasiswa yang mendaftar.</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    {{-- TABEL RIWAYAT PENILAIAN LAMA (TIDAK ADA YANG DIUBAH) --}}
     <div class="card card-modern p-4">
         
         <div class="row align-items-center mb-4 pb-3 border-bottom">
             <div class="col-md-4">
                 <h3 class="fw-bold m-0 text-dark">📊 Riwayat Penilaian</h3>
-                <p class="text-muted small m-0 mt-1">Kelola data nilai sidang Anda.</p>
+                <p class="text-muted small m-0 mt-1">Kelola data nilai yang sudah disubmit.</p>
             </div>
             <div class="col-md-8 d-flex justify-content-md-end mt-3 mt-md-0 gap-2">
                 <form action="/dashboard" method="GET" class="d-flex">
@@ -103,7 +160,8 @@
                         <button class="btn btn-white border border-start-0 rounded-end-pill bg-white text-muted" type="submit"><i class="bi bi-search"></i></button>
                     </div>
                 </form>
-                <a href="/tambah-nilai" class="btn btn-gradient text-nowrap"><i class="bi bi-plus-lg me-1"></i> Nilai Baru</a>
+                {{-- TOMBOL NILAI BARU MENGARAH KE ROUTE form_nilai.create --}}
+                <a href="{{ route('form_nilai.create') }}" class="btn btn-gradient text-nowrap"><i class="bi bi-plus-lg me-1"></i> Nilai Bebas</a>
             </div>
         </div>
 
@@ -154,11 +212,6 @@
                                         <li>
                                             <a class="dropdown-item py-2 d-flex justify-content-between align-items-center" href="/tracker/{{ $siswa->id }}">
                                                 <span><i class="bi bi-clock-history text-warning me-2"></i> Tracker Revisi</span>
-                                                @if($siswa->status_revisi == 1)
-                                                    <span class="badge bg-success rounded-pill ms-2" style="font-size: 0.6rem">Selesai</span>
-                                                @elseif($siswa->catatan_revisi)
-                                                    <span class="badge bg-warning text-dark rounded-pill ms-2" style="font-size: 0.6rem">!</span>
-                                                @endif
                                             </a>
                                         </li>
                                         <li>

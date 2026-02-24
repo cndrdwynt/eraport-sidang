@@ -4,53 +4,41 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Penilaian;
-use App\Models\Revisi;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RevisiController extends Controller
 {
-    // 1. Buka Halaman Tracker
+    // Menampilkan halaman tracker revisi ke Dosen
     public function index($id)
     {
-        // Ambil data mahasiswa beserta history revisinya
-        $siswa = Penilaian::with('revisis')->where('user_id', Auth::id())->findOrFail($id);
-        
-        return view('tracker_revisi', compact('siswa'));
+        // Cari data penilaian
+        $penilaian = Penilaian::where('user_id', Auth::id())->findOrFail($id);
+
+        // Cari mahasiswa berdasarkan nrp di penilaian
+        $mahasiswa = DB::table('mahasiswas')->where('nrp', $penilaian->nrp)->first();
+
+        // Ambil revisis berdasarkan ID Mahasiswa (Bukan Penilaian)
+        if ($mahasiswa) {
+            $revisis = DB::table('revisis')
+                         ->where('mahasiswa_id', $mahasiswa->id)
+                         ->orderBy('created_at', 'desc')
+                         ->get();
+        } else {
+            $revisis = collect([]); 
+        }
+
+        return view('tracker_revisi', compact('penilaian', 'revisis', 'mahasiswa'));
     }
 
-    // 2. Tambah Catatan Baru
-    public function store(Request $request, $id)
+    // Fungsi untuk mengubah status revisi jadi Selesai (ACC)
+    public function accRevisi($id)
     {
-        $request->validate([
-            'catatan' => 'required',
-            'tanggal_bimbingan' => 'required|date',
+        DB::table('revisis')->where('id', $id)->update([
+            'status' => 1,
+            'updated_at' => now()
         ]);
 
-        Revisi::create([
-            'penilaian_id' => $id,
-            'catatan' => $request->catatan,
-            'tanggal_bimbingan' => $request->tanggal_bimbingan,
-            'status' => 'pending'
-        ]);
-
-        return back()->with('sukses', 'Catatan revisi ditambahkan!');
-    }
-
-    // 3. Update Status (Jadi Selesai/Belum)
-    public function updateStatus($id)
-    {
-        $revisi = Revisi::findOrFail($id);
-        // Toggle status: Kalau pending jadi selesai, kalau selesai jadi pending
-        $revisi->status = ($revisi->status == 'pending') ? 'selesai' : 'pending';
-        $revisi->save();
-
-        return back()->with('sukses', 'Status diperbarui!');
-    }
-    
-    // 4. Hapus Catatan
-    public function destroy($id)
-    {
-        Revisi::findOrFail($id)->delete();
-        return back()->with('sukses', 'Catatan dihapus.');
+        return redirect()->back()->with('sukses', 'Revisi berhasil di-ACC (Selesai).');
     }
 }
